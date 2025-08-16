@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "📅 [日期] - 每日计划"
-date: YYYY-MM-DD
+date: 2024-01-01
 categories: [daily-plan, 2024]
 tags: [计划, 工作, 学习, 健康, 家庭]
 ---

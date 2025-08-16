@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📅 我的每日计划系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 300px;
+            background: #2c3e50;
+            color: white;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: #34495e;
+            border-bottom: 1px solid #4a5f7a;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* 导航树样式 */
+        .nav-tree {
+            padding: 20px;
+        }
+
+        .year-item {
+            margin-bottom: 15px;
+        }
+
+        .year-header {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #34495e;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .year-header:hover {
+            background: #4a5f7a;
+        }
+
+        .year-header .toggle {
+            margin-right: 10px;
+            transition: transform 0.3s;
+        }
+
+        .year-header.collapsed .toggle {
+            transform: rotate(-90deg);
+        }
+
+        .month-list {
+            margin-left: 20px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .year-header.expanded + .month-list {
+            display: block;
+        }
+
+        .month-item {
+            margin-bottom: 10px;
+        }
+
+        .month-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            background: #4a5f7a;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .month-header:hover {
+            background: #5a6f8a;
+        }
+
+        .month-header .toggle {
+            margin-right: 8px;
+            transition: transform 0.3s;
+        }
+
+        .month-header.collapsed .toggle {
+            transform: rotate(-90deg);
+        }
+
+        .date-list {
+            margin-left: 20px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .month-header.expanded + .date-list {
+            display: block;
+        }
+
+        .date-item {
+            margin-bottom: 5px;
+        }
+
+        .date-link {
+            display: block;
+            padding: 6px 10px;
+            color: #ecf0f1;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .date-link:hover {
+            background: #5a6f8a;
+            color: white;
+        }
+
+        .date-link.active {
+            background: #3498db;
+            color: white;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .content-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .content-header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .content-header p {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+
+        .plan-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+
+        .no-plan {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .no-plan h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .no-plan p {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .create-plan-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .create-plan-btn:hover {
+            background: #2980b9;
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .spinner {
+            border: 3px solid #ecf0f1;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 300px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+
+        /* 错误状态 */
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .refresh-btn {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>📅 每日计划</h1>
+                <p>按时间浏览您的计划</p>
+            </div>
+            <div class="nav-tree" id="navTree">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在扫描计划文件...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1>欢迎使用每日计划系统</h1>
+                <p>系统正在自动扫描您的计划文件...</p>
+            </div>
+            <div class="plan-content" id="planContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在加载计划内容...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let plansData = {};
+        let currentPlan = null;
+
+        // 自动扫描文件结构
+        async function scanPlansDirectory() {
+            try {
+                // 尝试使用fetch API扫描目录
+                const response = await fetch('./daily-plans/');
+                if (response.ok) {
+                    // 如果能够访问目录，尝试解析HTML列表
+                    const html = await response.text();
+                    plansData = parseDirectoryListing(html);
+                } else {
+                    // 如果无法直接访问目录，使用预定义的数据
+                    plansData = await loadPredefinedData();
+                }
+                
+                // 初始化导航树
+                initNavTree();
+                updateContentHeader();
+                
+            } catch (error) {
+                console.error('扫描目录失败:', error);
+                // 显示错误信息
+                showError('无法自动扫描目录，请检查文件结构');
+                // 尝试加载预定义数据
+                try {
+                    plansData = await loadPredefinedData();
+                    initNavTree();
+                    updateContentHeader();
+                } catch (e) {
+                    showError('无法加载任何计划数据');
+                }
+            }
+        }
+
+        // 解析目录列表HTML
+        function parseDirectoryListing(html) {
+            const data = {};
+            const linkRegex = /<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/g;
+            let match;
+            
+            while ((match = linkRegex.exec(html)) !== null) {
+                const href = match[1];
+                const text = match[2];
+                
+                // 匹配日期格式的文件
+                if (href.match(/^\d{4}-\d{2}-\d{2}\.md$/)) {
+                    const [year, month, date] = href.split('-');
+                    const day = date.replace('.md', '');
+                    
+                    if (!data[year]) data[year] = {};
+                    if (!data[year][month]) data[year][month] = {};
+                    
+                    data[year][month][day] = {
+                        title: `${year}年${month}月${day}日 - 每日计划`,
+                        content: `点击查看 ${year}年${month}月${day}日 的详细计划内容...`,
+                        file_path: `daily-plans/${href}`,
+                        full_path: `./daily-plans/${href}`
+                    };
+                }
+            }
+            
+            return data;
+        }
+
+        // 加载预定义数据（作为备用方案）
+        async function loadPredefinedData() {
+            // 这里可以放置一些示例数据，或者从其他源加载
+            return {
+                "2024": {
+                    "01": {
+                        "15": {
+                            "title": "📅 2024年1月15日 - 每日计划",
+                            "content": "这是一个示例计划，实际使用时系统会自动扫描您的文件...",
+                            "file_path": "daily-plans/2024/01-January/2024-01-15.md",
+                            "full_path": "./daily-plans/2024/01-January/2024-01-15.md"
+                        }
+                    }
+                }
+            };
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const navTree = document.getElementById('navTree');
+            navTree.innerHTML = `
+                <div class="error">
+                    <p>${message}</p>
+                    <button class="refresh-btn" onclick="scanPlansDirectory()">重新扫描</button>
+                </div>
+            `;
+        }
+
+        // 更新内容头部
+        function updateContentHeader() {
+            const header = document.querySelector('.content-header p');
+            const totalPlans = Object.values(plansData).reduce((yearTotal, year) => {
+                return yearTotal + Object.values(year).reduce((monthTotal, month) => {
+                    return monthTotal + Object.keys(month).length;
+                }, 0);
+            }, 0);
+            
+            header.textContent = `系统已扫描到 ${totalPlans} 个计划文件，从左侧选择日期查看内容`;
+        }
+
+        // 初始化导航树
+        function initNavTree() {
+            const navTree = document.getElementById('navTree');
+            let html = '';
+
+            if (Object.keys(plansData).length === 0) {
+                html = `
+                    <div class="no-plan">
+                        <h2>📁 没有找到计划文件</h2>
+                        <p>请确保daily-plans目录下有正确格式的计划文件</p>
+                        <p>文件名格式：YYYY-MM-DD.md</p>
+                    </div>
+                `;
+            } else {
+                for (const year in plansData) {
+                    html += `
+                        <div class="year-item">
+                            <div class="year-header collapsed" onclick="toggleYear(this)">
+                                <span class="toggle">▶</span>
+                                <span>${year}年</span>
+                            </div>
+                            <div class="month-list">
+                    `;
+
+                    for (const month in plansData[year]) {
+                        const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                                          '七月', '八月', '九月', '十月', '十一月', '十二月'];
+                        const monthName = monthNames[parseInt(month) - 1];
+                        
+                        html += `
+                            <div class="month-item">
+                                <div class="month-header collapsed" onclick="toggleMonth(this)">
+                                    <span class="toggle">▶</span>
+                                    <span>${monthName}</span>
+                                </div>
+                                <div class="date-list">
+                        `;
+
+                        for (const date in plansData[year][month]) {
+                            html += `
+                                <div class="date-item">
+                                    <a href="#" class="date-link" onclick="showPlan('${year}-${month}-${date}')">
+                                        ${date}日
+                                    </a>
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            navTree.innerHTML = html;
+        }
+
+        // 切换年份展开/折叠
+        function toggleYear(yearHeader) {
+            yearHeader.classList.toggle('collapsed');
+            yearHeader.classList.toggle('expanded');
+        }
+
+        // 切换月份展开/折叠
+        function toggleMonth(monthHeader) {
+            monthHeader.classList.toggle('collapsed');
+            monthHeader.classList.toggle('expanded');
+        }
+
+        // 显示计划内容
+        async function showPlan(dateStr) {
+            const planContent = document.getElementById('planContent');
+            
+            // 移除所有日期链接的active状态
+            document.querySelectorAll('.date-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 添加当前选中日期的active状态
+            event.target.classList.add('active');
+
+            // 显示加载状态
+            planContent.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在加载计划内容...</p>
+                </div>
+            `;
+
+            // 解析日期
+            const [year, month, date] = dateStr.split('-');
+            
+            if (plansData[year] && plansData[year][month] && plansData[year][month][date]) {
+                const plan = plansData[year][month][date];
+                
+                try {
+                    // 尝试加载实际的markdown文件内容
+                    const response = await fetch(plan.full_path);
+                    if (response.ok) {
+                        const content = await response.text();
+                        // 解析markdown内容（简单版本）
+                        const parsedContent = parseMarkdown(content);
+                        displayPlan(plan.title, dateStr, parsedContent);
+                    } else {
+                        // 如果无法加载文件，显示预览内容
+                        displayPlan(plan.title, dateStr, plan.content);
+                    }
+                } catch (error) {
+                    console.error('加载计划文件失败:', error);
+                    displayPlan(plan.title, dateStr, plan.content);
+                }
+            } else {
+                planContent.innerHTML = `
+                    <div class="no-plan">
+                        <h2>📝 ${dateStr} 的计划</h2>
+                        <p>这个日期还没有创建计划</p>
+                        <a href="#" class="create-plan-btn" onclick="createNewPlan('${dateStr}')">创建计划</a>
+                    </div>
+                `;
+            }
+        }
+
+        // 解析markdown内容（简单版本）
+        function parseMarkdown(markdown) {
+            // 移除front matter
+            let content = markdown.replace(/^---[\s\S]*?---/, '');
+            
+            // 简单的markdown到HTML转换
+            content = content
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/\n/g, '<br>');
+            
+            return content;
+        }
+
+        // 显示计划内容
+        function displayPlan(title, dateStr, content) {
+            const planContent = document.getElementById('planContent');
+            planContent.innerHTML = `
+                <h1>${title}</h1>
+                <div class="plan-details">
+                    <p><strong>日期：</strong>${dateStr}</p>
+                    <div class="plan-body">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 创建新计划
+        function createNewPlan(dateStr = null) {
+            const planContent = document.getElementById('planContent');
+            const date = dateStr || new Date().toISOString().split('T')[0];
+            
+            planContent.innerHTML = `
+                <h1>创建新计划</h1>
+                <div class="plan-form">
+                    <p><strong>日期：</strong>${date}</p>
+                    <form onsubmit="savePlan(event, '${date}')">
+                        <div style="margin: 20px 0;">
+                            <label for="planTitle">标题：</label><br>
+                            <input type="text" id="planTitle" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;" placeholder="输入计划标题">
+                        </div>
+                        <div style="margin: 20px 0;">
+                            <label for="planContent">内容：</label><br>
+                            <textarea id="planContent" style="width: 100%; height: 300px; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;" placeholder="输入计划内容"></textarea>
+                        </div>
+                        <button type="submit" style="padding: 12px 24px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer;">保存计划</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        // 保存计划
+        function savePlan(event, dateStr) {
+            event.preventDefault();
+            const title = document.getElementById('planTitle').value;
+            const content = document.getElementById('planContent').value;
+            
+            if (!title || !content) {
+                alert('请填写标题和内容');
+                return;
+            }
+
+            // 这里可以添加保存到服务器的逻辑
+            alert('计划保存成功！');
+            
+            // 显示保存的计划
+            displayPlan(title, dateStr, content);
+        }
+
+        // 页面加载完成后自动扫描
+        document.addEventListener('DOMContentLoaded', function() {
+            scanPlansDirectory();
+        });
+    </script>
+</body>
+</html>
