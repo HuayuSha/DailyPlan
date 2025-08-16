@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计划模板 - 我的每日计划</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>📅 我的每日计划</h1>
+            <ul class="nav-links">
+                <li><a href="index.html">首页</a></li>
+                <li><a href="goals.html">长期目标</a></li>
+                <li><a href="templates.html" class="active">模板</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="templates-header">
+            <h2>📝 计划模板</h2>
+            <p>使用这些模板来快速创建您的每日和每周计划。</p>
+        </section>
+
+        <section class="template-categories">
+            <div class="template-category">
+                <h3>📅 每日模板</h3>
+                
+                <div class="template-item">
+                    <h4>工作日模板</h4>
+                    <div class="template-content">
+                        <h5>🌅 晨间例程 (6:00-8:00)</h5>
+                        <ul>
+                            <li>起床 & 洗漱</li>
+                            <li>晨间锻炼 (30分钟)</li>
+                            <li>健康早餐</li>
+                            <li>回顾今日目标</li>
+                        </ul>
+                        
+                        <h5>💼 工作时间 (9:00-18:00)</h5>
+                        <ul>
+                            <li>查看邮件和消息</li>
+                            <li>处理重要任务 (上午专注时间)</li>
+                            <li>团队会议/沟通</li>
+                            <li>完成日常工作任务</li>
+                            <li>整理工作笔记</li>
+                        </ul>
+                        
+                        <h5>🌆 晚间时光 (19:00-22:00)</h5>
+                        <ul>
+                            <li>晚餐时间</li>
+                            <li>个人学习 (1小时)</li>
+                            <li>休闲娱乐</li>
+                            <li>准备明日计划</li>
+                        </ul>
+                        
+                        <h5>🌙 睡前准备 (22:00-23:00)</h5>
+                        <ul>
+                            <li>总结今日成就</li>
+                            <li>阅读或冥想</li>
+                            <li>准备就寝</li>
+                        </ul>
+                    </div>
+                    <button class="apply-template" onclick="applyTemplate('workday')">应用此模板</button>
+                </div>
+
+                <div class="template-item">
+                    <h4>周末模板</h4>
+                    <div class="template-content">
+                        <h5>🌅 轻松晨间 (8:00-10:00)</h5>
+                        <ul>
+                            <li>自然醒来</li>
+                            <li>悠闲早餐</li>
+                            <li>轻度运动或散步</li>
+                        </ul>
+                        
+                        <h5>🎯 个人时间 (10:00-16:00)</h5>
+                        <ul>
+                            <li>个人爱好活动</li>
+                            <li>家务整理</li>
+                            <li>社交活动</li>
+                            <li>户外活动</li>
+                        </ul>
+                        
+                        <h5>👨‍👩‍👧‍👦 家庭时光 (16:00-20:00)</h5>
+                        <ul>
+                            <li>家庭聚餐</li>
+                            <li>与家人交流</li>
+                            <li>共同娱乐活动</li>
+                        </ul>
+                        
+                        <h5>🌙 放松时光 (20:00-23:00)</h5>
+                        <ul>
+                            <li>看电影或电视剧</li>
+                            <li>阅读</li>
+                            <li>计划下周安排</li>
+                        </ul>
+                    </div>
+                    <button class="apply-template" onclick="applyTemplate('weekend')">应用此模板</button>
+                </div>
+            </div>
+
+            <div class="template-category">
+                <h3>📊 每周模板</h3>
+                
+                <div class="template-item">
+                    <h4>标准工作周模板</h4>
+                    <div class="template-content">
+                        <div class="week-template">
+                            <div class="day-template">
+                                <h5>周一 - 新周开始</h5>
+                                <ul>
+                                    <li>周计划回顾</li>
+                                    <li>重要项目启动</li>
+                                    <li>团队同步会议</li>
+                                    <li>设定本周目标</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="day-template">
+                                <h5>周二 - 高效执行</h5>
+                                <ul>
+                                    <li>专注核心任务</li>
+                                    <li>客户沟通</li>
+                                    <li>技能学习时间</li>
+                                    <li>健身锻炼</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="day-template">
+                                <h5>周三 - 中期检查</h5>
+                                <ul>
+                                    <li>项目进度检查</li>
+                                    <li>团队协作</li>
+                                    <li>问题解决</li>
+                                    <li>个人反思</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="day-template">
+                                <h5>周四 - 冲刺完成</h5>
+                                <ul>
+                                    <li>重要任务完成</li>
+                                    <li>文档整理</li>
+                                    <li>下周准备</li>
+                                    <li>社交网络</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="day-template">
+                                <h5>周五 - 收尾总结</h5>
+                                <ul>
+                                    <li>周工作总结</li>
+                                    <li>下周计划制定</li>
+                                    <li>团队庆祝</li>
+                                    <li>放松准备</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="day-template weekend-template">
+                                <h5>周六 - 个人时光</h5>
+                                <ul>
+                                    <li>户外活动</li>
+                                    <li>个人爱好</li>
+                                    <li>家务整理</li>
+                                    <li>社交聚会</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="day-template weekend-template">
+                                <h5>周日 - 休息充电</h5>
+                                <ul>
+                                    <li>充分休息</li>
+                                    <li>家庭时光</li>
+                                    <li>下周准备</li>
+                                    <li>个人总结</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="apply-template" onclick="applyTemplate('workweek')">应用此模板</button>
+                </div>
+            </div>
+
+            <div class="template-category">
+                <h3>🎯 目标导向模板</h3>
+                
+                <div class="template-item">
+                    <h4>学习成长模板</h4>
+                    <div class="template-content">
+                        <h5>每日必做</h5>
+                        <ul>
+                            <li>阅读 30 分钟</li>
+                            <li>技能练习 1 小时</li>
+                            <li>知识笔记整理</li>
+                            <li>反思学习收获</li>
+                        </ul>
+                        
+                        <h5>每周目标</h5>
+                        <ul>
+                            <li>完成一个学习项目</li>
+                            <li>写一篇学习总结</li>
+                            <li>与同行交流学习</li>
+                            <li>制定下周学习计划</li>
+                        </ul>
+                    </div>
+                    <button class="apply-template" onclick="applyTemplate('learning')">应用此模板</button>
+                </div>
+
+                <div class="template-item">
+                    <h4>健康生活模板</h4>
+                    <div class="template-content">
+                        <h5>每日健康习惯</h5>
+                        <ul>
+                            <li>晨间锻炼 30 分钟</li>
+                            <li>健康饮食记录</li>
+                            <li>充足水分摄入</li>
+                            <li>保证 7-8 小时睡眠</li>
+                        </ul>
+                        
+                        <h5>每周健康目标</h5>
+                        <ul>
+                            <li>健身房训练 3 次</li>
+                            <li>户外活动 2 次</li>
+                            <li>健康体检记录</li>
+                            <li>放松冥想时间</li>
+                        </ul>
+                    </div>
+                    <button class="apply-template" onclick="applyTemplate('health')">应用此模板</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="custom-template">
+            <h3>✏️ 创建自定义模板</h3>
+            <div class="custom-form">
+                <input type="text" id="template-name" placeholder="模板名称">
+                <textarea id="template-content" placeholder="在这里输入您的自定义模板内容..."></textarea>
+                <button onclick="saveCustomTemplate()">保存模板</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 我的每日计划系统</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

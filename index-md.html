@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的每日计划 - Markdown版本</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .md-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .file-browser {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .file-tree {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+        }
+        
+        .file-tree ul {
+            list-style: none;
+            padding-left: 1.5rem;
+            border-left: 1px dashed #ddd;
+        }
+        
+        .file-tree li {
+            margin: 0.3rem 0;
+            position: relative;
+        }
+        
+        .file-tree li:before {
+            content: "├─";
+            position: absolute;
+            left: -1.5rem;
+            color: #999;
+        }
+        
+        .file-tree li:last-child:before {
+            content: "└─";
+        }
+        
+        .folder-icon {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+        
+        .file-icon {
+            color: #ff6b6b;
+            margin-right: 0.5rem;
+        }
+        
+        .file-link {
+            color: #333;
+            text-decoration: none;
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+        
+        .file-link:hover {
+            background: #f0f2ff;
+            color: #667eea;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .action-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .action-card h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .action-card p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .stats-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .recent-files {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .recent-files h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .recent-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .recent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+        }
+        
+        .recent-item:hover {
+            background-color: #f8f9ff;
+        }
+        
+        .recent-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .file-date {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .md-container {
+                padding: 1rem;
+            }
+            
+            .file-tree {
+                font-size: 0.9rem;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>📅 我的每日计划</h1>
+            <ul class="nav-links">
+                <li><a href="index.html">HTML版本</a></li>
+                <li><a href="index-md.html" class="active">Markdown版本</a></li>
+                <li><a href="daily-plans/goals.md" target="_blank">长期目标</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="md-container">
+        <section class="welcome">
+            <h2>📝 基于 Markdown 的每日计划系统</h2>
+            <p>使用 Markdown 文件记录和管理您的每日计划，支持版本控制和跨平台编辑。</p>
+        </section>
+
+        <section class="quick-actions">
+            <div class="action-card">
+                <h3>🆕 创建今日计划</h3>
+                <p>基于模板快速创建今天的计划文件</p>
+                <button class="action-btn" onclick="createTodayPlan()">创建今日计划</button>
+            </div>
+            
+            <div class="action-card">
+                <h3>📅 创建指定日期计划</h3>
+                <p>为特定日期创建计划文件</p>
+                <button class="action-btn" onclick="createDatePlan()">选择日期创建</button>
+            </div>
+            
+            <div class="action-card">
+                <h3>📊 生成周计划</h3>
+                <p>创建本周的总体计划和总结</p>
+                <button class="action-btn" onclick="createWeekPlan()">创建周计划</button>
+            </div>
+            
+            <div class="action-card">
+                <h3>🎯 查看目标</h3>
+                <p>查看和编辑长期目标</p>
+                <a href="daily-plans/goals.md" target="_blank" class="action-btn">打开目标文件</a>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <h3>📊 计划统计</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-files">0</div>
+                    <div class="stat-label">总计划文件</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="this-month">0</div>
+                    <div class="stat-label">本月计划</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="this-week">0</div>
+                    <div class="stat-label">本周计划</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completion-rate">0%</div>
+                    <div class="stat-label">完成率</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="recent-files">
+            <h3>📄 最近的计划文件</h3>
+            <ul class="recent-list" id="recent-files-list">
+                <li class="recent-item">
+                    <div class="file-info">
+                        <span class="file-icon">📄</span>
+                        <a href="daily-plans/2024/01-January/2024-01-15.md" target="_blank" class="file-link">2024-01-15.md</a>
+                    </div>
+                    <span class="file-date">2024-01-15</span>
+                </li>
+                <!-- 更多文件会通过JavaScript动态加载 -->
+            </ul>
+        </section>
+
+        <section class="file-browser">
+            <h3>📁 文件浏览器</h3>
+            <div class="file-tree">
+                <ul>
+                    <li>
+                        <span class="folder-icon">📁</span> daily-plans/
+                        <ul>
+                            <li><span class="file-icon">📄</span><a href="daily-plans/README.md" target="_blank" class="file-link">README.md</a></li>
+                            <li><span class="file-icon">🎯</span><a href="daily-plans/goals.md" target="_blank" class="file-link">goals.md</a></li>
+                            <li>
+                                <span class="folder-icon">📁</span> templates/
+                                <ul>
+                                    <li><span class="file-icon">📝</span><a href="daily-plans/templates/daily-template.md" target="_blank" class="file-link">daily-template.md</a></li>
+                                    <li><span class="file-icon">📝</span><a href="daily-plans/templates/weekly-template.md" target="_blank" class="file-link">weekly-template.md</a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <span class="folder-icon">📁</span> 2024/
+                                <ul>
+                                    <li>
+                                        <span class="folder-icon">📁</span> 01-January/
+                                        <ul>
+                                            <li><span class="file-icon">📄</span><a href="daily-plans/2024/01-January/2024-01-15.md" target="_blank" class="file-link">2024-01-15.md</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="usage-guide">
+            <div style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 2rem; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">📖 使用指南</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <h4 style="color: #333; margin-bottom: 0.5rem;">🚀 快速开始</h4>
+                        <ol style="color: #666; padding-left: 1.2rem;">
+                            <li>运行 <code>python generate-daily-plan.py</code></li>
+                            <li>选择要创建的计划类型</li>
+                            <li>在生成的 Markdown 文件中编辑您的计划</li>
+                            <li>使用任何 Markdown 编辑器打开和编辑</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h4 style="color: #333; margin-bottom: 0.5rem;">✅ Markdown 任务语法</h4>
+                        <ul style="color: #666; padding-left: 1.2rem;">
+                            <li><code>- [ ]</code> 未完成任务</li>
+                            <li><code>- [x]</code> 已完成任务</li>
+                            <li><code>- [~]</code> 部分完成任务</li>
+                            <li><code>- [-]</code> 取消的任务</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: #333; margin-bottom: 0.5rem;">🏷️ 标签系统</h4>
+                        <ul style="color: #666; padding-left: 1.2rem;">
+                            <li><code>#工作</code> 工作相关</li>
+                            <li><code>#学习</code> 学习相关</li>
+                            <li><code>#健康</code> 健康相关</li>
+                            <li><code>#家庭</code> 家庭相关</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 我的每日计划系统 - Markdown版本</p>
+    </footer>
+
+    <script>
+        // 模拟创建计划功能
+        function createTodayPlan() {
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            alert(`请运行以下命令创建今日计划：\n\npython generate-daily-plan.py today\n\n或者手动创建文件：\ndaily-plans/${today.getFullYear()}/${getMonthDir(today.getMonth() + 1)}/${dateStr}.md`);
+        }
+
+        function createDatePlan() {
+            const date = prompt('请输入日期 (格式: YYYY-MM-DD):');
+            if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                alert(`请运行以下命令创建指定日期计划：\n\npython generate-daily-plan.py date ${date}`);
+            } else if (date) {
+                alert('日期格式错误，请使用 YYYY-MM-DD 格式');
+            }
+        }
+
+        function createWeekPlan() {
+            alert('请运行以下命令创建周计划：\n\npython generate-daily-plan.py week');
+        }
+
+        function getMonthDir(month) {
+            const months = {
+                1: '01-January', 2: '02-February', 3: '03-March', 4: '04-April',
+                5: '05-May', 6: '06-June', 7: '07-July', 8: '08-August',
+                9: '09-September', 10: '10-October', 11: '11-November', 12: '12-December'
+            };
+            return months[month];
+        }
+
+        // 更新统计信息（模拟数据）
+        function updateStats() {
+            document.getElementById('total-files').textContent = '15';
+            document.getElementById('this-month').textContent = '8';
+            document.getElementById('this-week').textContent = '3';
+            document.getElementById('completion-rate').textContent = '75%';
+        }
+
+        // 页面加载时更新统计
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+        });
+    </script>
+</body>
+</html>
