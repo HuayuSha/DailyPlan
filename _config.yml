@@ -21,10 +21,17 @@ exclude:
   - vendor/cache/
   - vendor/gems/
   - vendor/ruby/
+  - generate-daily-plan.py
+  - script.js
+  - styles.css
+  - templates.html
+  - goals.html
+  - index-md.html
 
 # 包含文件
 include:
   - _pages
+  - daily-plans
 
 # Markdown 设置
 markdown: kramdown
@@ -32,3 +39,23 @@ highlighter: rouge
 kramdown:
   input: GFM
   syntax_highlighter: rouge
+  auto_ids: true
+
+# 集合设置
+collections:
+  daily-plans:
+    output: true
+    permalink: /:collection/:path/
+
+# 默认设置
+defaults:
+  - scope:
+      path: "daily-plans"
+      type: "daily-plans"
+    values:
+      layout: "post"
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"

@@ -1,0 +1,158 @@
+---
+layout: default
+title: 所有每日计划
+---
+
+<h1>📋 所有每日计划</h1>
+
+<p>这里列出了所有的每日计划记录，按时间倒序排列。</p>
+
+<div class="plan-list">
+  {% assign all_plans = site.daily-plans | sort: 'path' | reverse %}
+  {% assign current_year = '' %}
+  {% assign current_month = '' %}
+  
+  {% for plan in all_plans %}
+    {% assign plan_date = plan.path | split: '/' | last | split: '.' | first %}
+    {% assign year = plan_date | slice: 0, 4 %}
+    {% assign month = plan_date | slice: 5, 2 %}
+    
+    {% if year != current_year %}
+      {% assign current_year = year %}
+      <h2>📅 {{ year }}年</h2>
+    {% endif %}
+    
+    {% if month != current_month %}
+      {% assign current_month = month %}
+      {% assign month_name = '' %}
+      {% case month %}
+        {% when '01' %}{% assign month_name = '1月' %}
+        {% when '02' %}{% assign month_name = '2月' %}
+        {% when '03' %}{% assign month_name = '3月' %}
+        {% when '04' %}{% assign month_name = '4月' %}
+        {% when '05' %}{% assign month_name = '5月' %}
+        {% when '06' %}{% assign month_name = '6月' %}
+        {% when '07' %}{% assign month_name = '7月' %}
+        {% when '08' %}{% assign month_name = '8月' %}
+        {% when '09' %}{% assign month_name = '9月' %}
+        {% when '10' %}{% assign month_name = '10月' %}
+        {% when '11' %}{% assign month_name = '11月' %}
+        {% when '12' %}{% assign month_name = '12月' %}
+      {% endcase %}
+      <h3>📂 {{ month_name }}</h3>
+      <ul class="month-plans">
+    {% endif %}
+    
+    <li class="plan-item">
+      <a href="{{ plan.url | relative_url }}">
+        <span class="plan-date">{{ plan_date }}</span>
+        <span class="plan-title">
+          {% if plan.title %}
+            {{ plan.title }}
+          {% else %}
+            每日计划 - {{ plan_date }}
+          {% endif %}
+        </span>
+      </a>
+    </li>
+    
+    {% assign next_plan = all_plans[forloop.index] %}
+    {% if next_plan %}
+      {% assign next_plan_date = next_plan.path | split: '/' | last | split: '.' | first %}
+      {% assign next_month = next_plan_date | slice: 5, 2 %}
+      {% if next_month != current_month %}
+        </ul>
+      {% endif %}
+    {% else %}
+      </ul>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% if all_plans.size == 0 %}
+<div class="no-plans">
+  <p>🤔 还没有任何每日计划记录。</p>
+  <p>使用以下命令创建你的第一个每日计划：</p>
+  <code>python generate-daily-plan.py today</code>
+</div>
+{% endif %}
+
+<style>
+.plan-list {
+  margin: 2rem 0;
+}
+
+.plan-list h2 {
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.plan-list h3 {
+  color: #34495e;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.month-plans {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.plan-item {
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+  transition: all 0.3s ease;
+}
+
+.plan-item:hover {
+  background: #e3f2fd;
+  transform: translateX(5px);
+}
+
+.plan-item a {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plan-date {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: #2c3e50;
+  background: #ecf0f1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.plan-title {
+  flex: 1;
+  margin-left: 1rem;
+  color: #34495e;
+}
+
+.no-plans {
+  text-align: center;
+  padding: 3rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 2rem 0;
+}
+
+.no-plans code {
+  background: #2c3e50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+}
+</style>

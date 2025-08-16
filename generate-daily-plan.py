@@ -81,12 +81,15 @@ class DailyPlanGenerator:
     def replace_placeholders(self, content, date):
         """替换模板中的占位符"""
         weekday = self.weekdays_cn[date.weekday()]
+        month_name = list(self.months_cn.values())[date.month - 1].split('-')[1]
         
         replacements = {
             "[日期]": f"{date.strftime('%Y年%m月%d日')}",
             "YYYY年MM月DD日 星期X": f"{date.strftime('%Y年%m月%d日')} {weekday}",
             "YYYY-MM-DD HH:mm": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "YYYY-MM-DD": date.strftime("%Y-%m-%d")
+            "YYYY-MM-DD": date.strftime("%Y-%m-%d"),
+            "2024": date.strftime("%Y"),
+            "categories: [daily-plan, 2024]": f"categories: [daily-plan, {date.year}, {month_name}]"
         }
         
         for placeholder, replacement in replacements.items():
