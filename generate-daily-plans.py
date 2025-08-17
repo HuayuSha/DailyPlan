@@ -338,20 +338,14 @@ def main():
     current_date = today
     plan_count = 0
     
-    print(f"开始日期: {today.strftime('%Y-%m-%d')}")
-    print(f"目标日期: {target_date.strftime('%Y-%m-%d')}")
-    
     # 计算总天数
     total_days = (target_date - today).days + 1
-    print(f"需要生成 {total_days} 天的计划")
     
     for i in range(total_days):
         current_date = today + timedelta(days=i)
         year = current_date.year
         month = current_date.month
         day = current_date.day
-        
-        print(f"正在处理第 {i+1} 天: {current_date.strftime('%Y-%m-%d')}")
         
         # 创建年月目录
         year_dir = os.path.join(base_dir, str(year))
