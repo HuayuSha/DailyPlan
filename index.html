@@ -340,6 +340,102 @@
             font-size: 0.9rem;
             opacity: 0.8;
         }
+
+        /* 统计摘要样式 */
+        .stat-summary {
+            padding: 15px;
+        }
+
+        .stat-summary-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-summary .stat-item {
+            background: #34495e;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-summary .stat-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 2px;
+        }
+
+        .stat-summary .stat-label {
+            font-size: 0.8rem;
+            color: #bdc3c7;
+        }
+
+        /* 自动生成的日期行样式 */
+        .auto-date {
+            background: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            margin: 12px 0 8px 0;
+            font-size: 1rem;
+            color: #2c3e50;
+        }
+        
+        .plan-body {
+            margin-top: 8px;
+        }
+
+        /* 主标题样式 */
+        .main-content h1 {
+            margin: 0 0 12px 0;
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        /* 任务列表样式 */
+        .task-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 4px 0;
+        }
+        
+        .task-item input[type="checkbox"] {
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+        
+        .task-item span {
+            line-height: 1.4;
+        }
+        
+        /* 列表样式 */
+        .plan-body ul {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+        
+        .plan-body li {
+            margin: 6px 0;
+            line-height: 1.5;
+        }
+        
+        /* 标题样式 */
+        .plan-body h2 {
+            margin: 20px 0 12px 0;
+            color: #2c3e50;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        
+        .plan-body h3 {
+            margin: 16px 0 8px 0;
+            color: #34495e;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -357,37 +453,37 @@
             </div>
             
             <div class="nav-tree" id="navTree">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>正在扫描计划文件...</p>
+                <!-- 今天 -->
+                <div class="year-item">
+                    <div class="year-header expanded" onclick="showTodayPlan()">
+                        <span>📅 今天</span>
+                    </div>
+                </div>
+                
+                <!-- 统计 -->
+                <div class="year-item">
+                    <div class="year-header expanded" onclick="toggleYear(this)">
+                        <span class="toggle">▼</span>
+                        <span>📊 统计</span>
+                    </div>
+                    <div class="month-list">
+                        <div class="stat-summary" id="statSummary">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <p>正在加载统计...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- 主内容区域 -->
         <div class="main-content">
-            <div class="content-header">
-                <h1>欢迎使用每日计划系统</h1>
-                <p>系统正在自动扫描您的计划文件...</p>
-                <div class="stats-info" id="statsInfo" style="display: none;">
-                    <div class="stat-item">
-                        <div class="stat-number" id="totalPlans">0</div>
-                        <div class="stat-label">总计划数</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="yearCount">0</div>
-                        <div class="stat-label">年份数</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="monthCount">0</div>
-                        <div class="stat-label">月份数</div>
-                    </div>
-                </div>
-            </div>
             <div class="plan-content" id="planContent">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>正在加载计划内容...</p>
+                <div class="no-plan">
+                    <h2>📅 每日计划系统</h2>
+                    <p>从左侧选择日期查看您的计划内容</p>
                 </div>
             </div>
         </div>
@@ -406,13 +502,15 @@
         // 初始化系统
         async function initSystem() {
             try {
+                // 首先尝试直接加载今天的任务
+                await showTodayPlanImmediately();
+                
+                // 然后异步加载所有文件
                 plansScanner = new PlansScanner();
                 plansData = await plansScanner.scanPlansDirectory();
                 
                 if (Object.keys(plansData).length > 0) {
                     initNavTree();
-                    updateStats();
-                    updateContentHeader();
                 } else {
                     showNoPlansMessage();
                 }
@@ -430,26 +528,10 @@
                 <div class="no-plan">
                     <h2>📁 没有找到计划文件</h2>
                     <p>请确保daily-plans目录下有正确格式的计划文件</p>
-                    <p>文件名格式：YYYY-MM-DD.md</p>
+                    <p>文件名格式：DD.md</p>
                     <button class="refresh-btn" onclick="initSystem()">重新扫描</button>
                 </div>
             `;
-        }
-
-        // 更新统计信息
-        function updateStats() {
-            const stats = plansScanner.getStats();
-            document.getElementById('totalPlans').textContent = stats.totalPlans;
-            document.getElementById('yearCount').textContent = stats.yearCount;
-            document.getElementById('monthCount').textContent = stats.monthCount;
-            document.getElementById('statsInfo').style.display = 'flex';
-        }
-
-        // 更新内容头部
-        function updateContentHeader() {
-            const header = document.querySelector('.content-header p');
-            const stats = plansScanner.getStats();
-            header.textContent = `系统已扫描到 ${stats.totalPlans} 个计划文件，从左侧选择日期查看内容`;
         }
 
         // 搜索计划
@@ -505,55 +587,110 @@
         // 初始化导航树
         function initNavTree() {
             const navTree = document.getElementById('navTree');
-            let html = '';
-
-            for (const year in plansData) {
-                html += `
-                    <div class="year-item">
-                        <div class="year-header collapsed" onclick="toggleYear(this)">
-                            <span class="toggle">▶</span>
-                            <span>${year}年</span>
-                        </div>
-                        <div class="month-list">
-                `;
-
-                for (const month in plansData[year]) {
-                    const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
-                                      '七月', '八月', '九月', '十月', '十一月', '十二月'];
-                    const monthName = monthNames[parseInt(month) - 1];
-                    
-                    html += `
-                        <div class="month-item">
-                            <div class="month-header collapsed" onclick="toggleMonth(this)">
-                                <span class="toggle">▶</span>
-                                <span>${monthName}</span>
-                            </div>
-                            <div class="date-list">
-                    `;
-
-                    for (const date in plansData[year][month]) {
-                        html += `
-                            <div class="date-item">
-                                <a href="#" class="date-link" onclick="showPlan('${year}-${month}-${date}')">
-                                    ${date}日
-                                </a>
-                            </div>
-                        `;
-                    }
-
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                }
-
-                html += `
-                        </div>
-                    </div>
-                `;
+            
+            // 获取现有的"今天"和"统计"栏
+            const todayItem = navTree.querySelector('.year-item:first-child');
+            const statsItem = navTree.querySelector('.year-item:nth-child(2)');
+            
+            // 清空所有内容
+            navTree.innerHTML = '';
+            
+            // 重新添加"今天"栏
+            if (todayItem) {
+                navTree.appendChild(todayItem);
             }
+            
+            // 重新添加"统计"栏
+            if (statsItem) {
+                navTree.appendChild(statsItem);
+            }
+            
+            // 添加年份数据
+            Object.keys(plansData).sort((a, b) => parseInt(b) - parseInt(a)).forEach(year => {
+                const yearData = plansData[year];
+                const yearItem = createYearItem(year, yearData);
+                navTree.appendChild(yearItem);
+            });
+            
+            // 初始化统计
+            loadStatSummary();
+        }
 
-            navTree.innerHTML = html;
+        // 创建年份项
+        function createYearItem(year, yearData) {
+            const yearItem = document.createElement('div');
+            yearItem.classList.add('year-item');
+
+            const yearHeader = document.createElement('div');
+            yearHeader.classList.add('year-header');
+            yearHeader.setAttribute('onclick', `toggleYear(this)`);
+
+            const toggle = document.createElement('span');
+            toggle.classList.add('toggle');
+            toggle.textContent = '▶'; // 默认折叠
+
+            const yearSpan = document.createElement('span');
+            yearSpan.textContent = `${year}年`;
+
+            yearHeader.appendChild(toggle);
+            yearHeader.appendChild(yearSpan);
+            yearItem.appendChild(yearHeader);
+
+            const monthList = document.createElement('div');
+            monthList.classList.add('month-list');
+
+            // 按月份排序
+            Object.keys(yearData).sort((a, b) => parseInt(a) - parseInt(b)).forEach(month => {
+                const monthData = yearData[month];
+                const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                                  '七月', '八月', '九月', '十月', '十一月', '十二月'];
+                const monthName = monthNames[parseInt(month) - 1];
+                
+                const monthItem = document.createElement('div');
+                monthItem.classList.add('month-item');
+                
+                const monthHeader = document.createElement('div');
+                monthHeader.classList.add('month-header');
+                monthHeader.setAttribute('onclick', `toggleMonth(this)`);
+
+                const monthToggle = document.createElement('span');
+                monthToggle.classList.add('toggle');
+                monthToggle.textContent = '▶'; // 默认折叠
+
+                const monthSpan = document.createElement('span');
+                monthSpan.textContent = monthName;
+
+                monthHeader.appendChild(monthToggle);
+                monthHeader.appendChild(monthSpan);
+                monthItem.appendChild(monthHeader);
+
+                const dateList = document.createElement('div');
+                dateList.classList.add('date-list');
+
+                // 按日期排序
+                Object.keys(monthData).sort((a, b) => parseInt(a) - parseInt(b)).forEach(date => {
+                    const dateItem = document.createElement('div');
+                    dateItem.classList.add('date-item');
+
+                    const dateLink = document.createElement('a');
+                    dateLink.href = '#';
+                    dateLink.classList.add('date-link');
+                    dateLink.setAttribute('onclick', `showPlan('${year}-${month}-${date}')`);
+
+                    const dateSpan = document.createElement('span');
+                    dateSpan.textContent = `${date}日`;
+
+                    dateLink.appendChild(dateSpan);
+                    dateItem.appendChild(dateLink);
+                    dateList.appendChild(dateItem);
+                });
+
+                monthItem.appendChild(dateList);
+                monthList.appendChild(monthItem);
+            });
+
+            yearItem.appendChild(monthList);
+            return yearItem;
         }
 
         // 切换年份展开/折叠
@@ -616,13 +753,28 @@
         // 显示计划内容
         function displayPlan(title, dateStr, content) {
             const planContent = document.getElementById('planContent');
+            
+            // 解析日期字符串
+            const [year, month, day] = dateStr.split('-');
+            
+            // 生成完整日期信息
+            const fullDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const weekday = weekdays[fullDate.getDay()];
+            const formattedDate = `${year}年${month}月${day}日`;
+            
+            // 从内容中提取一级标题
+            const titleMatch = content.match(/^<h1>(.*?)<\/h1>/);
+            const pageTitle = titleMatch ? titleMatch[1] : '📅 每日计划';
+            
+            // 移除内容中的一级标题，避免重复
+            const contentWithoutTitle = content.replace(/^<h1>.*?<\/h1>/, '');
+            
             planContent.innerHTML = `
-                <h1>${title}</h1>
-                <div class="plan-details">
-                    <p><strong>日期：</strong>${dateStr}</p>
-                    <div class="plan-body">
-                        ${content}
-                    </div>
+                <h1>${pageTitle}</h1>
+                <p class="auto-date"><strong>日期：</strong>${formattedDate} ${weekday}</p>
+                <div class="plan-body">
+                    ${contentWithoutTitle}
                 </div>
             `;
         }
@@ -667,6 +819,231 @@
             
             // 显示保存的计划
             displayPlan(title, dateStr, content);
+        }
+
+        // 加载统计信息
+        function loadStatSummary() {
+            const statSummary = document.getElementById('statSummary');
+            if (!statSummary) return;
+            
+            try {
+                const stats = plansScanner.getStats();
+                
+                statSummary.innerHTML = `
+                    <div class="stat-summary-content">
+                        <div class="stat-item">
+                            <div class="stat-number">${stats.totalPlans}</div>
+                            <div class="stat-label">总计划</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${stats.yearCount}</div>
+                            <div class="stat-label">年份</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${stats.monthCount}</div>
+                            <div class="stat-label">月份</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${calculateAveragePlansPerMonth(stats)}</div>
+                            <div class="stat-label">月均</div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                statSummary.innerHTML = '<p style="color: #e74c3c; padding: 10px;">统计加载失败</p>';
+            }
+        }
+
+        // 计算月均计划数
+        function calculateAveragePlansPerMonth(stats) {
+            if (stats.monthCount === 0) return 0;
+            return Math.round((stats.totalPlans / stats.monthCount) * 10) / 10;
+        }
+
+        // 显示今天的任务
+        async function showTodayPlan() {
+            const today = new Date();
+            const year = today.getFullYear().toString();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            
+            console.log('尝试显示今天的任务:', { year, month, day });
+            console.log('当前plansData:', plansData);
+            
+            // 检查今天是否有计划
+            if (plansData[year] && plansData[year][month] && plansData[year][month][day]) {
+                console.log('找到今天的计划，正在显示...');
+                // 有今天的计划，显示它
+                await showPlan(`${year}-${month}-${day}`);
+                
+                // 在侧边栏中高亮今天的日期
+                highlightTodayInSidebar(year, month, day);
+            } else {
+                console.log('没有找到今天的计划，显示创建提示');
+                // 没有今天的计划，显示创建提示
+                showCreateTodayPlanPrompt(year, month, day);
+            }
+        }
+
+        // 立即尝试显示今天的任务
+        async function showTodayPlanImmediately() {
+            const today = new Date();
+            const year = today.getFullYear().toString();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            
+            console.log('立即尝试加载今天的任务:', { year, month, day });
+            
+            try {
+                // 直接尝试读取今天的文件
+                const response = await fetch(`./daily-plans/${year}/${month}/${day}.md`);
+                
+                if (response.ok) {
+                    const content = await response.text();
+                    console.log('成功加载今天的任务文件');
+                    
+                    // 显示今天的任务
+                    displayTodayPlan(content, year, month, day);
+                    
+                    // 在侧边栏中高亮今天的日期（如果侧边栏已加载）
+                    setTimeout(() => {
+                        highlightTodayInSidebar(year, month, day);
+                    }, 100);
+                    
+                } else {
+                    console.log('今天的任务文件不存在，显示创建提示');
+                    showCreateTodayPlanPrompt(year, month, day);
+                }
+                
+            } catch (error) {
+                console.log('无法立即加载今天的任务，显示创建提示:', error);
+                showCreateTodayPlanPrompt(year, month, day);
+            }
+        }
+
+        // 显示今天的任务内容
+        function displayTodayPlan(content, year, month, day) {
+            const planContent = document.getElementById('planContent');
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const fullDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            const weekday = weekdays[fullDate.getDay()];
+            const formattedDate = `${year}年${month}月${day}日`;
+            
+            // 解析Markdown内容
+            const htmlContent = parseMarkdown(content);
+            
+            // 从内容中提取一级标题
+            const titleMatch = htmlContent.match(/^<h1>(.*?)<\/h1>/);
+            const pageTitle = titleMatch ? titleMatch[1] : '📅 今日计划';
+            
+            // 移除内容中的一级标题，避免重复
+            const contentWithoutTitle = htmlContent.replace(/^<h1>.*?<\/h1>/, '');
+            
+            planContent.innerHTML = `
+                <h1>${pageTitle}</h1>
+                <p class="auto-date"><strong>日期：</strong>${formattedDate} ${weekday}</p>
+                <div class="plan-body">
+                    ${contentWithoutTitle}
+                </div>
+            `;
+        }
+
+        // 在侧边栏中高亮今天的日期
+        function highlightTodayInSidebar(year, month, day) {
+            // 移除所有日期的active状态
+            document.querySelectorAll('.date-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 找到今天的日期链接并添加active状态
+            const todayLink = document.querySelector(`[onclick="showPlan('${year}-${month}-${day}')"]`);
+            if (todayLink) {
+                todayLink.classList.add('active');
+            }
+            
+            // 展开包含今天的年份和月份
+            expandYearAndMonth(year, month);
+        }
+
+        // 展开年份和月份
+        function expandYearAndMonth(year, month) {
+            // 展开年份
+            const yearHeader = document.querySelector(`[onclick*="toggleYear"]`);
+            if (yearHeader && yearHeader.textContent.includes(year)) {
+                yearHeader.classList.remove('collapsed');
+                yearHeader.classList.add('expanded');
+            }
+            
+            // 展开月份
+            const monthHeaders = document.querySelectorAll(`[onclick*="toggleMonth"]`);
+            monthHeaders.forEach(monthHeader => {
+                if (monthHeader.textContent.includes(getMonthName(month))) {
+                    monthHeader.classList.remove('collapsed');
+                    monthHeader.classList.add('expanded');
+                }
+            });
+        }
+
+        // 获取月份名称
+        function getMonthName(month) {
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                              '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            return monthNames[parseInt(month) - 1];
+        }
+
+        // 显示创建今天计划的提示
+        function showCreateTodayPlanPrompt(year, month, day) {
+            const planContent = document.getElementById('planContent');
+            const today = new Date();
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const weekday = weekdays[today.getDay()];
+            const formattedDate = `${year}年${month}月${day}日`;
+            
+            planContent.innerHTML = `
+                <h1>📅 今日计划</h1>
+                <p class="auto-date"><strong>日期：</strong>${formattedDate} ${weekday}</p>
+                <div class="no-plan">
+                    <h2>🤔 今天还没有创建计划</h2>
+                    <p>今天是 ${formattedDate} ${weekday}，您还没有创建今天的计划</p>
+                    <p>点击下方按钮快速创建今天的计划</p>
+                    <a href="#" class="create-plan-btn" onclick="createNewPlan('${year}-${month}-${day}')">创建今日计划</a>
+                </div>
+            `;
+        }
+
+        // 解析Markdown内容
+        function parseMarkdown(markdown) {
+            let html = markdown;
+            
+            // 解析标题
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // 解析粗体和斜体
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // 解析任务列表
+            html = html.replace(/^- \[([ x])\] (.*$)/gim, '<div class="task-item"><input type="checkbox" $1 disabled><span>$2</span></div>');
+            
+            // 解析普通列表
+            html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+            
+            // 解析分隔线
+            html = html.replace(/^---$/gim, '<hr>');
+            
+            // 解析段落
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = html.replace(/^(?!<[h|u|d|p])(.*$)/gim, '<p>$1</p>');
+            
+            // 清理多余的段落标签
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p><p>/g, '<p>');
+            html = html.replace(/<\/p><\/p>/g, '</p>');
+            
+            return html;
         }
 
         // 页面加载完成后自动初始化
