@@ -236,8 +236,10 @@ class PlansScanner {
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`(.*?)`/g, '<code>$1</code>')
-            // 处理链接 [text](url)
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+            // 处理链接 [text](url) - 修复正则表达式以支持中文
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, text, url) {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+            })
             // 处理任务列表
             .replace(/^- \[ \] (.*$)/gm, '<div class="task-item"><input type="checkbox" disabled> <span>$1</span></div>')
             .replace(/^- \[x\] (.*$)/gm, '<div class="task-item"><input type="checkbox" checked disabled> <span>$1</span></div>')
