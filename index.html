@@ -505,15 +505,8 @@
                 // 首先尝试直接加载今天的任务
                 await showTodayPlanImmediately();
                 
-                // 然后异步加载所有文件
-                plansScanner = new PlansScanner();
-                plansData = await plansScanner.scanPlansDirectory();
-                
-                if (Object.keys(plansData).length > 0) {
-                    initNavTree();
-                } else {
-                    showNoPlansMessage();
-                }
+                // 然后加载预生成的导航数据
+                await loadPreGeneratedNavData();
                 
                 // 显示调试信息
                 showDebugInfo();
@@ -521,6 +514,69 @@
             } catch (error) {
                 console.error('系统初始化失败:', error);
                 showError('系统初始化失败，请刷新页面重试');
+            }
+        }
+
+        // 加载预生成的导航数据
+        async function loadPreGeneratedNavData() {
+            try {
+                console.log('开始加载预生成的导航数据...');
+                
+                // 尝试多种可能的路径
+                const possiblePaths = [
+                    './nav-data.json',
+                    'nav-data.json',
+                    '/nav-data.json',
+                    `${window.location.pathname.replace(/\/$/, '')}/nav-data.json`
+                ];
+                
+                let plansData = null;
+                
+                for (const path of possiblePaths) {
+                    try {
+                        console.log('尝试加载路径:', path);
+                        const response = await fetch(path);
+                        if (response.ok) {
+                            plansData = await response.json();
+                            console.log('成功加载导航数据，路径:', path);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log('路径失败:', path, e);
+                    }
+                }
+                
+                if (plansData && Object.keys(plansData).length > 0) {
+                    console.log('导航数据加载成功:', plansData);
+                    initNavTree(plansData);
+                } else {
+                    console.log('无法加载预生成的导航数据，尝试动态扫描...');
+                    // 降级到动态扫描
+                    await fallbackToDynamicScan();
+                }
+                
+            } catch (error) {
+                console.error('加载预生成导航数据失败:', error);
+                // 降级到动态扫描
+                await fallbackToDynamicScan();
+            }
+        }
+
+        // 降级到动态扫描
+        async function fallbackToDynamicScan() {
+            try {
+                console.log('开始动态扫描...');
+                plansScanner = new PlansScanner();
+                plansData = await plansScanner.scanPlansDirectory();
+                
+                if (Object.keys(plansData).length > 0) {
+                    initNavTree(plansData);
+                } else {
+                    showNoPlansMessage();
+                }
+            } catch (error) {
+                console.error('动态扫描也失败了:', error);
+                showNoPlansMessage();
             }
         }
 
@@ -588,29 +644,44 @@
         }
 
         // 初始化导航树
-        function initNavTree() {
+        function initNavTree(data) {
             const navTree = document.getElementById('navTree');
-            
-            // 获取现有的"今天"和"统计"栏
-            const todayItem = navTree.querySelector('.year-item:first-child');
-            const statsItem = navTree.querySelector('.year-item:nth-child(2)');
             
             // 清空所有内容
             navTree.innerHTML = '';
             
-            // 重新添加"今天"栏
-            if (todayItem) {
-                navTree.appendChild(todayItem);
-            }
+            // 添加"今天"栏
+            const todayItem = document.createElement('div');
+            todayItem.classList.add('year-item');
+            todayItem.innerHTML = `
+                <div class="year-header expanded" onclick="showTodayPlan()">
+                    <span>📅 今天</span>
+                </div>
+            `;
+            navTree.appendChild(todayItem);
             
-            // 重新添加"统计"栏
-            if (statsItem) {
-                navTree.appendChild(statsItem);
-            }
+            // 添加"统计"栏
+            const statsItem = document.createElement('div');
+            statsItem.classList.add('year-item');
+            statsItem.innerHTML = `
+                <div class="year-header expanded" onclick="toggleYear(this)">
+                    <span class="toggle">▼</span>
+                    <span>📊 统计</span>
+                </div>
+                <div class="month-list">
+                    <div class="stat-summary" id="statSummary">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>正在加载统计...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            navTree.appendChild(statsItem);
             
             // 添加年份数据
-            Object.keys(plansData).sort((a, b) => parseInt(b) - parseInt(a)).forEach(year => {
-                const yearData = plansData[year];
+            Object.keys(data).sort((a, b) => parseInt(b) - parseInt(a)).forEach(year => {
+                const yearData = data[year];
                 const yearItem = createYearItem(year, yearData);
                 navTree.appendChild(yearItem);
             });
