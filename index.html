@@ -29,6 +29,143 @@
             color: white;
             overflow-y: auto;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            right: 10px;
+            top: 20px;
+            background: #34495e;
+            border: none;
+            color: white;
+            padding: 6px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .sidebar-toggle:hover {
+            background: #4a5f7a;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            right: 15px;
+        }
+
+        /* 收起时的图标样式 */
+        .sidebar.collapsed .sidebar-header h1,
+        .sidebar.collapsed .sidebar-header p,
+        .sidebar.collapsed .search-box,
+        .sidebar.collapsed .nav-tree {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            padding: 20px 10px;
+            text-align: center;
+        }
+
+        .sidebar.collapsed .sidebar-header::after {
+            content: "📅";
+            font-size: 24px;
+        }
+
+        /* 收起时的年份图标 */
+        .sidebar.collapsed .year-header {
+            padding: 15px 10px;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .year-header span:not(.toggle) {
+            display: none;
+        }
+
+        .sidebar.collapsed .year-header::after {
+            content: "📊";
+            font-size: 18px;
+        }
+
+        .sidebar.collapsed .year-header[onclick*="showTodayPlan"]::after {
+            content: "📅";
+        }
+
+        .sidebar.collapsed .year-header[onclick*="toggleYear"]::after {
+            content: "📊";
+        }
+
+        /* 收起时的统计内容 */
+        .sidebar.collapsed .stat-summary {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .sidebar.collapsed .stat-summary .loading {
+            padding: 10px 5px;
+        }
+
+        .sidebar.collapsed .stat-summary .spinner {
+            width: 20px;
+            height: 20px;
+            margin: 0 auto 10px;
+        }
+
+        .sidebar.collapsed .stat-summary p {
+            font-size: 10px;
+            margin: 0;
+        }
+
+        /* 收起时的月份图标 */
+        .sidebar.collapsed .month-header {
+            padding: 12px 10px;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .month-header span:not(.toggle) {
+            display: none;
+        }
+
+        .sidebar.collapsed .month-header::after {
+            content: "📅";
+            font-size: 16px;
+        }
+
+        /* 收起时的日期图标 */
+        .sidebar.collapsed .date-link {
+            padding: 8px 10px;
+            text-align: center;
+            display: block;
+        }
+
+        .sidebar.collapsed .date-link::after {
+            content: "📝";
+            font-size: 14px;
+        }
+
+        .sidebar.collapsed .month-list,
+        .sidebar.collapsed .date-list {
+            display: block !important;
+            margin-left: 0;
+        }
+
+        .sidebar.collapsed .year-item {
+            margin-bottom: 10px;
+        }
+
+        .sidebar.collapsed .month-item {
+            margin-bottom: 8px;
+        }
+
+        .sidebar.collapsed .date-item {
+            margin-bottom: 5px;
         }
 
         .sidebar-header {
@@ -174,6 +311,11 @@
             flex: 1;
             padding: 30px;
             overflow-y: auto;
+            transition: margin-left 0.3s ease;
+        }
+
+        .sidebar.collapsed + .main-content {
+            margin-left: 60px;
         }
 
         .content-header {
@@ -600,8 +742,11 @@
 <body>
     <div class="container">
         <!-- 侧边栏 -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
+                <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                    ◀
+                </button>
                 <h1>📅 每日计划</h1>
                 <p>按时间浏览您的计划</p>
             </div>
@@ -1483,6 +1628,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             initSystem();
         });
+
+        // 侧边栏收起展开功能
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                toggleBtn.textContent = '◀';
+            } else {
+                sidebar.classList.add('collapsed');
+                toggleBtn.textContent = '▶';
+            }
+        }
     </script>
 </body>
 </html>
