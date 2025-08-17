@@ -548,6 +548,8 @@
                 
                 if (plansData && Object.keys(plansData).length > 0) {
                     console.log('导航数据加载成功:', plansData);
+                    // 将数据保存到全局变量
+                    window.plansData = plansData;
                     initNavTree(plansData);
                 } else {
                     console.log('无法加载预生成的导航数据，尝试动态扫描...');
@@ -779,18 +781,59 @@
             monthHeader.classList.toggle('expanded');
         }
 
-        // 显示计划内容
-        async function showPlan(dateStr) {
-            const planContent = document.getElementById('planContent');
-            
+        // 显示指定日期的计划
+        async function showPlan(dateString) {
+            try {
+                const [year, month, day] = dateString.split('-');
+                console.log(`尝试显示计划: ${year}-${month}-${day}`);
+                
+                // 使用全局变量或局部变量
+                const currentPlansData = window.plansData || plansData || {};
+                console.log('showPlan中的plansData:', currentPlansData);
+                
+                if (currentPlansData[year] && currentPlansData[year][month] && currentPlansData[year][month][day]) {
+                    const planData = currentPlansData[year][month][day];
+                    console.log('找到计划数据:', planData);
+                    
+                    // 读取文件内容
+                    const response = await fetch(planData.full_path);
+                    if (response.ok) {
+                        const content = await response.text();
+                        displayPlan(content, year, month, day);
+                        
+                        // 高亮选中的日期
+                        highlightSelectedDate(dateString);
+                    } else {
+                        showError(`无法读取计划文件: ${planData.full_path}`);
+                    }
+                } else {
+                    console.log(`在plansData中找不到计划: ${year}-${month}-${day}`);
+                    showError(`找不到 ${year}年${month}月${day}日 的计划`);
+                }
+            } catch (error) {
+                console.error('显示计划失败:', error);
+                showError('显示计划时发生错误');
+            }
+        }
+
+        // 高亮选中的日期
+        function highlightSelectedDate(dateString) {
             // 移除所有日期链接的active状态
             document.querySelectorAll('.date-link').forEach(link => {
                 link.classList.remove('active');
             });
             
             // 添加当前选中日期的active状态
-            event.target.classList.add('active');
+            const targetLink = document.querySelector(`[onclick="showPlan('${dateString}')"]`);
+            if (targetLink) {
+                targetLink.classList.add('active');
+            }
+        }
 
+        // 显示计划内容
+        function displayPlan(content, year, month, day) {
+            const planContent = document.getElementById('planContent');
+            
             // 显示加载状态
             planContent.innerHTML = `
                 <div class="loading">
@@ -798,51 +841,22 @@
                     <p>正在加载计划内容...</p>
                 </div>
             `;
-
-            // 解析日期
-            const [year, month, date] = dateStr.split('-');
             
-            if (plansData[year] && plansData[year][month] && plansData[year][month][date]) {
-                const plan = plansData[year][month][date];
-                
-                try {
-                    // 使用扫描器获取计划内容
-                    const content = await plansScanner.getPlanContent(plan.full_path);
-                    displayPlan(plan.title, dateStr, content);
-                } catch (error) {
-                    console.error('加载计划文件失败:', error);
-                    displayPlan(plan.title, dateStr, plan.content);
-                }
-            } else {
-                planContent.innerHTML = `
-                    <div class="no-plan">
-                        <h2>📝 ${dateStr} 的计划</h2>
-                        <p>这个日期还没有创建计划</p>
-                        <a href="#" class="create-plan-btn" onclick="createNewPlan('${dateStr}')">创建计划</a>
-                    </div>
-                `;
-            }
-        }
-
-        // 显示计划内容
-        function displayPlan(title, dateStr, content) {
-            const planContent = document.getElementById('planContent');
-            
-            // 解析日期字符串
-            const [year, month, day] = dateStr.split('-');
-            
-            // 生成完整日期信息
-            const fullDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-            const weekday = weekdays[fullDate.getDay()];
-            const formattedDate = `${year}年${month}月${day}日`;
+            // 解析Markdown内容
+            const htmlContent = parseMarkdown(content);
             
             // 从内容中提取一级标题
-            const titleMatch = content.match(/^<h1>(.*?)<\/h1>/);
+            const titleMatch = htmlContent.match(/^<h1>(.*?)<\/h1>/);
             const pageTitle = titleMatch ? titleMatch[1] : '📅 每日计划';
             
             // 移除内容中的一级标题，避免重复
-            const contentWithoutTitle = content.replace(/^<h1>.*?<\/h1>/, '');
+            const contentWithoutTitle = htmlContent.replace(/^<h1>.*?<\/h1>/, '');
+            
+            // 生成日期信息
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            const fullDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            const weekday = weekdays[fullDate.getDay()];
+            const formattedDate = `${year}年${month}月${day}日`;
             
             planContent.innerHTML = `
                 <h1>${pageTitle}</h1>
@@ -942,10 +956,13 @@
             const day = String(today.getDate()).padStart(2, '0');
             
             console.log('尝试显示今天的任务:', { year, month, day });
-            console.log('当前plansData:', plansData);
+            
+            // 使用全局变量或局部变量
+            const currentPlansData = window.plansData || plansData || {};
+            console.log('当前plansData:', currentPlansData);
             
             // 检查今天是否有计划
-            if (plansData[year] && plansData[year][month] && plansData[year][month][day]) {
+            if (currentPlansData[year] && currentPlansData[year][month] && currentPlansData[year][month][day]) {
                 console.log('找到今天的计划，正在显示...');
                 // 有今天的计划，显示它
                 await showPlan(`${year}-${month}-${day}`);
