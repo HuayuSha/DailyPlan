@@ -436,6 +436,60 @@
             font-size: 1.2rem;
             font-weight: 600;
         }
+
+        /* 统计样式 */
+        .stats-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .empty-stats {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        
+        .stats-error {
+            text-align: center;
+            padding: 20px;
+            color: #e74c3c;
+        }
+        
+        .retry-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        
+        .retry-btn:hover {
+            background: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -909,43 +963,142 @@
             displayPlan(title, dateStr, content);
         }
 
-        // 加载统计信息
+        // 加载统计摘要
         function loadStatSummary() {
-            const statSummary = document.getElementById('statSummary');
-            if (!statSummary) return;
-            
             try {
-                const stats = plansScanner.getStats();
+                console.log('开始加载统计信息...');
                 
-                statSummary.innerHTML = `
-                    <div class="stat-summary-content">
-                        <div class="stat-item">
-                            <div class="stat-number">${stats.totalPlans}</div>
-                            <div class="stat-label">总计划</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${stats.yearCount}</div>
-                            <div class="stat-label">年份</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${stats.monthCount}</div>
-                            <div class="stat-label">月份</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${calculateAveragePlansPerMonth(stats)}</div>
-                            <div class="stat-label">月均</div>
-                        </div>
-                    </div>
-                `;
+                // 使用全局变量或局部变量
+                const currentPlansData = window.plansData || plansData || {};
+                console.log('统计中的plansData:', currentPlansData);
+                
+                if (!currentPlansData || Object.keys(currentPlansData).length === 0) {
+                    console.log('没有计划数据，显示空统计');
+                    showEmptyStats();
+                    return;
+                }
+                
+                // 计算统计信息
+                const stats = calculateStats(currentPlansData);
+                console.log('计算出的统计信息:', stats);
+                
+                // 显示统计信息
+                displayStats(stats);
+                
             } catch (error) {
-                statSummary.innerHTML = '<p style="color: #e74c3c; padding: 10px;">统计加载失败</p>';
+                console.error('加载统计信息失败:', error);
+                showStatsError();
             }
         }
 
-        // 计算月均计划数
-        function calculateAveragePlansPerMonth(stats) {
-            if (stats.monthCount === 0) return 0;
-            return Math.round((stats.totalPlans / stats.monthCount) * 10) / 10;
+        // 计算统计信息
+        function calculateStats(plansData) {
+            const stats = {
+                totalPlans: 0,
+                yearCount: 0,
+                monthCount: 0,
+                recentPlans: [],
+                completionRate: 0
+            };
+            
+            try {
+                // 统计总数
+                for (const year in plansData) {
+                    stats.yearCount++;
+                    for (const month in plansData[year]) {
+                        stats.monthCount++;
+                        for (const day in plansData[year][month]) {
+                            stats.totalPlans++;
+                        }
+                    }
+                }
+                
+                // 计算平均每月计划数
+                stats.avgPlansPerMonth = stats.monthCount > 0 ? 
+                    Math.round((stats.totalPlans / stats.monthCount) * 10) / 10 : 0;
+                
+                // 获取最近5个计划
+                const allPlans = [];
+                for (const year in plansData) {
+                    for (const month in plansData[year]) {
+                        for (const day in plansData[year][month]) {
+                            const plan = plansData[year][month][day];
+                            allPlans.push({
+                                date: `${year}-${month}-${day}`,
+                                title: plan.title,
+                                ...plan
+                            });
+                        }
+                    }
+                }
+                
+                // 按日期排序，取最近5个
+                allPlans.sort((a, b) => new Date(b.date) - new Date(a.date));
+                stats.recentPlans = allPlans.slice(0, 5);
+                
+                console.log('统计计算完成:', stats);
+                
+            } catch (error) {
+                console.error('计算统计信息时出错:', error);
+            }
+            
+            return stats;
+        }
+
+        // 显示统计信息
+        function displayStats(stats) {
+            const statSummary = document.getElementById('statSummary');
+            if (!statSummary) {
+                console.error('找不到统计摘要元素');
+                return;
+            }
+            
+            statSummary.innerHTML = `
+                <div class="stats-content">
+                    <div class="stat-item">
+                        <div class="stat-number">${stats.totalPlans}</div>
+                        <div class="stat-label">总计划数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${stats.yearCount}</div>
+                        <div class="stat-label">年份数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${stats.monthCount}</div>
+                        <div class="stat-label">月份数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${stats.avgPlansPerMonth}</div>
+                        <div class="stat-label">月均计划</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示空统计
+        function showEmptyStats() {
+            const statSummary = document.getElementById('statSummary');
+            if (statSummary) {
+                statSummary.innerHTML = `
+                    <div class="empty-stats">
+                        <p>📊 暂无统计数据</p>
+                        <p>请先创建一些计划</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示统计错误
+        function showStatsError() {
+            const statSummary = document.getElementById('statSummary');
+            if (statSummary) {
+                statSummary.innerHTML = `
+                    <div class="stats-error">
+                        <p>❌ 统计加载失败</p>
+                        <button onclick="loadStatSummary()" class="retry-btn">重试</button>
+                    </div>
+                `;
+            }
         }
 
         // 显示今天的任务
