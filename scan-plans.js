@@ -7,33 +7,50 @@ class PlansScanner {
 
     // 扫描daily-plans目录
     async scanPlansDirectory() {
-        try {
-            console.log('开始扫描计划文件...');
-            
-            // 直接扫描年份目录
-            const yearData = await this.scanYearDirectories();
-            if (yearData && Object.keys(yearData).length > 0) {
-                this.plansData = yearData;
-                console.log('扫描完成，找到数据:', this.plansData);
-                return this.plansData;
+        console.log('开始扫描计划目录...');
+        
+        // 尝试多种可能的路径
+        const possiblePaths = [
+            './daily-plans/',
+            'daily-plans/',
+            '/daily-plans/',
+            `${window.location.pathname.replace(/\/$/, '')}/daily-plans/`
+        ];
+        
+        let plansData = {};
+        
+        for (const basePath of possiblePaths) {
+            try {
+                console.log('尝试扫描路径:', basePath);
+                const response = await fetch(basePath);
+                if (response.ok) {
+                    console.log('成功访问目录:', basePath);
+                    plansData = await this.scanYearDirectories(basePath);
+                    if (Object.keys(plansData).length > 0) {
+                        console.log('成功扫描到计划数据，使用路径:', basePath);
+                        this.basePath = basePath; // 保存工作路径
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.log('路径失败:', basePath, error);
             }
-
-            console.warn('无法扫描到任何计划文件');
-            return {};
-
-        } catch (error) {
-            console.error('扫描计划文件失败:', error);
-            return {};
         }
+        
+        if (Object.keys(plansData).length === 0) {
+            console.log('所有路径都无法访问，返回空数据');
+        }
+        
+        return plansData;
     }
 
     // 扫描年份目录
-    async scanYearDirectories() {
+    async scanYearDirectories(basePath) {
         const data = {};
         
         // 扫描2024年目录
         try {
-            const year2024Data = await this.scanYearDirectory('2024');
+            const year2024Data = await this.scanYearDirectory(basePath, '2024');
             if (year2024Data && Object.keys(year2024Data).length > 0) {
                 data['2024'] = year2024Data;
             }
@@ -46,7 +63,7 @@ class PlansScanner {
             if (year === 2024) continue; // 已经扫描过了
             
             try {
-                const yearData = await this.scanYearDirectory(year.toString());
+                const yearData = await this.scanYearDirectory(basePath, year.toString());
                 if (yearData && Object.keys(yearData).length > 0) {
                     data[year.toString()] = yearData;
                 }
@@ -59,9 +76,9 @@ class PlansScanner {
     }
 
     // 扫描单个年份目录
-    async scanYearDirectory(year) {
+    async scanYearDirectory(basePath, year) {
         try {
-            const yearPath = `./daily-plans/${year}/`;
+            const yearPath = `${basePath}${year}/`;
             const response = await fetch(yearPath);
             if (!response.ok) {
                 return null;
@@ -97,7 +114,7 @@ class PlansScanner {
                 data[month] = {};
                 
                 // 扫描月份目录下的文件 - 等待完成
-                await this.scanMonthDirectory(year, month, data[month]);
+                await this.scanMonthDirectory(basePath, year, month, data[month]);
             }
         }
         
@@ -105,44 +122,31 @@ class PlansScanner {
     }
 
     // 扫描月份目录
-    async scanMonthDirectory(year, month, monthData) {
+    async scanMonthDirectory(basePath, year, month, monthData) {
         try {
-            const monthPath = `./daily-plans/${year}/${month}/`;
-            console.log(`正在扫描月份目录: ${monthPath}`);
-            
+            const monthPath = `${basePath}${year}/${month}/`;
             const response = await fetch(monthPath);
             if (!response.ok) {
-                console.warn(`月份目录 ${monthPath} 访问失败`);
+                console.log(`无法访问月份目录: ${monthPath}`);
                 return;
             }
-
-            const html = await response.text();
-            console.log(`月份目录 ${monthPath} 内容:`, html.substring(0, 200) + '...');
             
-            this.parseMonthDirectory(html, monthData, year, month);
-            console.log(`月份目录 ${monthPath} 解析完成，找到 ${Object.keys(monthData).length} 个文件`);
-
+            const html = await response.text();
+            return await this.parseMonthDirectory(html, monthData, year, month);
         } catch (error) {
-            console.warn(`扫描月份目录 ${year}/${month} 失败:`, error);
+            console.error(`扫描月份目录失败: ${monthPath}`, error);
         }
     }
 
     // 解析月份目录
     parseMonthDirectory(html, monthData, year, month) {
-        const linkRegex = /<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/g;
-        let match;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const links = doc.querySelectorAll('a[href]');
         
-        while ((match = linkRegex.exec(html)) !== null) {
-            const href = match[1];
-            const text = match[2].trim();
-            
-            // 跳过父目录链接和当前目录
-            if (href === '../' || href === './' || href === '') {
-                continue;
-            }
-
-            // 处理日期文件 (DD.md)
-            if (href.match(/^\d{1,2}\.md$/)) {
+        links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href.endsWith('.md')) {
                 const day = href.replace('.md', '');
                 console.log(`找到计划文件: ${day}.md`);
                 
@@ -152,7 +156,7 @@ class PlansScanner {
                 const formattedDate = this.formatDate(fullDate);
                 
                 monthData[day] = {
-                    title: `每日计划 - ${day}日`,
+                    title: `每日计划 - ${day}日`, // This title is for sidebar display, not page content
                     content: `点击查看 ${formattedDate} ${weekday} 的详细计划内容...`,
                     file_path: `daily-plans/${year}/${month}/${href}`,
                     full_path: `./daily-plans/${year}/${month}/${href}`,
@@ -165,7 +169,9 @@ class PlansScanner {
                     formattedDate: formattedDate
                 };
             }
-        }
+        });
+        
+        return monthData;
     }
 
     // 根据年月日生成完整日期对象

@@ -515,6 +515,9 @@
                     showNoPlansMessage();
                 }
                 
+                // 显示调试信息
+                showDebugInfo();
+                
             } catch (error) {
                 console.error('系统初始化失败:', error);
                 showError('系统初始化失败，请刷新页面重试');
@@ -895,13 +898,33 @@
             console.log('立即尝试加载今天的任务:', { year, month, day });
             
             try {
-                // 直接尝试读取今天的文件
-                const response = await fetch(`./daily-plans/${year}/${month}/${day}.md`);
+                // 尝试多种可能的路径
+                const possiblePaths = [
+                    `./daily-plans/${year}/${month}/${day}.md`,
+                    `daily-plans/${year}/${month}/${day}.md`,
+                    `/daily-plans/${year}/${month}/${day}.md`,
+                    `${window.location.pathname.replace(/\/$/, '')}/daily-plans/${year}/${month}/${day}.md`
+                ];
                 
-                if (response.ok) {
-                    const content = await response.text();
-                    console.log('成功加载今天的任务文件');
-                    
+                let content = null;
+                let workingPath = null;
+                
+                for (const path of possiblePaths) {
+                    try {
+                        console.log('尝试路径:', path);
+                        const response = await fetch(path);
+                        if (response.ok) {
+                            content = await response.text();
+                            workingPath = path;
+                            console.log('成功加载今天的任务文件，路径:', path);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log('路径失败:', path, e);
+                    }
+                }
+                
+                if (content) {
                     // 显示今天的任务
                     displayTodayPlan(content, year, month, day);
                     
@@ -911,7 +934,7 @@
                     }, 100);
                     
                 } else {
-                    console.log('今天的任务文件不存在，显示创建提示');
+                    console.log('所有路径都无法访问今天的任务文件，显示创建提示');
                     showCreateTodayPlanPrompt(year, month, day);
                 }
                 
@@ -1044,6 +1067,26 @@
             html = html.replace(/<\/p><\/p>/g, '</p>');
             
             return html;
+        }
+
+        // 显示调试信息
+        function showDebugInfo() {
+            const debugInfo = `
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 16px; margin: 16px 0; font-family: monospace; font-size: 12px;">
+                    <h4>🔍 调试信息</h4>
+                    <p><strong>当前URL:</strong> ${window.location.href}</p>
+                    <p><strong>路径名:</strong> ${window.location.pathname}</p>
+                    <p><strong>协议:</strong> ${window.location.protocol}</p>
+                    <p><strong>主机:</strong> ${window.location.host}</p>
+                    <p><strong>用户代理:</strong> ${navigator.userAgent}</p>
+                    <p><strong>时间:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+            `;
+            
+            const planContent = document.getElementById('planContent');
+            if (planContent) {
+                planContent.insertAdjacentHTML('beforeend', debugInfo);
+            }
         }
 
         // 页面加载完成后自动初始化
