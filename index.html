@@ -317,10 +317,13 @@
 
         /* 任务列表样式 */
         .task-item {
-            margin: 8px 0;
-            padding: 8px 0;
             display: flex;
             align-items: flex-start;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            background: transparent;
+            transition: all 0.2s ease;
         }
 
         .task-item input[type="checkbox"] {
@@ -328,10 +331,50 @@
             margin-top: 2px;
         }
 
-        .task-item span {
-            line-height: 1.4;
+        .task-status {
+            margin-right: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            min-width: 80px;
+            text-align: left;
         }
 
+        .task-text {
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        /* 任务状态样式 */
+        .task-completed {
+            background: transparent;
+            border-left: none;
+        }
+
+        .task-partial {
+            background: transparent;
+            border-left: none;
+        }
+
+        .task-cancelled {
+            background: transparent;
+            border-left: none;
+        }
+
+        .task-in-progress {
+            background: transparent;
+            border-left: none;
+        }
+
+        .task-needs-help {
+            background: transparent;
+            border-left: none;
+        }
+
+        .task-pending {
+            background: transparent;
+            border-left: none;
+        }
+        
         /* 列表样式 */
         .plan-content li {
             margin: 5px 0;
@@ -415,7 +458,7 @@
 
         /* 自动生成的日期行样式 */
         .auto-date {
-            background: #f8f9fa;
+            background: transparent;
             padding: 8px 16px;
             border-radius: 6px;
             border-left: 4px solid #3498db;
@@ -531,6 +574,26 @@
         
         .retry-btn:hover {
             background: #c0392b;
+        }
+
+        /* 任务编辑提示 */
+        .task-edit-hint {
+            font-size: 0.8rem;
+            color: #6c757d;
+            opacity: 0.7;
+            margin-left: auto;
+            font-style: italic;
+        }
+
+        .task-item:hover .task-edit-hint {
+            opacity: 1;
+        }
+
+        /* 任务更新动画 */
+        @keyframes taskUpdated {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -1334,7 +1397,48 @@
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
             
             // 解析任务列表
-            html = html.replace(/^- \[([ x])\] (.*$)/gim, '<div class="task-item"><input type="checkbox" $1 disabled><span>$2</span></div>');
+            html = html.replace(/^- \[([ x~!>?])\] (.*$)/gim, function(match, status, text) {
+                let statusClass = '';
+                let statusText = '';
+                let icon = '';
+                
+                switch(status) {
+                    case 'x':
+                        statusClass = 'task-completed';
+                        statusText = '已完成';
+                        icon = '✅';
+                        break;
+                    case '~':
+                        statusClass = 'task-partial';
+                        statusText = '部分完成';
+                        icon = '🔄';
+                        break;
+                    case '!':
+                        statusClass = 'task-cancelled';
+                        statusText = '已取消';
+                        icon = '❌';
+                        break;
+                    case '>':
+                        statusClass = 'task-in-progress';
+                        statusText = '进行中';
+                        icon = '⏳';
+                        break;
+                    case '?':
+                        statusClass = 'task-needs-help';
+                        statusText = '需要帮助';
+                        icon = '❓';
+                        break;
+                    default:
+                        statusClass = 'task-pending';
+                        statusText = '未开始';
+                        icon = '⏸️';
+                }
+                
+                return `<div class="task-item ${statusClass}">
+                    <span class="task-status">${icon} ${statusText}</span>
+                    <span class="task-text">${text}</span>
+                </div>`;
+            });
             
             // 解析普通列表
             html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
