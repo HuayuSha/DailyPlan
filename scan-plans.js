@@ -236,7 +236,24 @@ class PlansScanner {
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`(.*?)`/g, '<code>$1</code>')
+            // 处理链接 [text](url)
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+            // 处理任务列表
+            .replace(/^- \[ \] (.*$)/gm, '<div class="task-item"><input type="checkbox" disabled> <span>$1</span></div>')
+            .replace(/^- \[x\] (.*$)/gm, '<div class="task-item"><input type="checkbox" checked disabled> <span>$1</span></div>')
+            // 处理普通列表
+            .replace(/^- (.*$)/gm, '<li>$1</li>')
+            // 处理水平线
+            .replace(/^---$/gm, '<hr>')
+            // 处理段落
+            .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br>');
+        
+        // 包装在段落标签中
+        content = '<p>' + content + '</p>';
+        
+        // 清理空的段落标签
+        content = content.replace(/<p><\/p>/g, '');
         
         return content;
     }
