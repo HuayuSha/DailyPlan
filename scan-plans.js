@@ -9,112 +9,124 @@ class PlansScanner {
     async scanPlansDirectory() {
         console.log('开始扫描计划目录...');
         
-        // 尝试多种可能的路径
-        const possiblePaths = [
-            './daily-plans/',
-            'daily-plans/',
-            '/daily-plans/',
-            `${window.location.pathname.replace(/\/$/, '')}/daily-plans/`
-        ];
+        // 不依赖目录列表，直接检查已知的文件
+        const plansData = {};
         
-        let plansData = {};
+        // 获取当前年份
+        const currentYear = new Date().getFullYear();
         
-        for (const basePath of possiblePaths) {
-            try {
-                console.log('尝试扫描路径:', basePath);
-                const response = await fetch(basePath);
-                if (response.ok) {
-                    console.log('成功访问目录:', basePath);
-                    plansData = await this.scanYearDirectories(basePath);
-                    if (Object.keys(plansData).length > 0) {
-                        console.log('成功扫描到计划数据，使用路径:', basePath);
-                        this.basePath = basePath; // 保存工作路径
-                        break;
-                    }
-                }
-            } catch (error) {
-                console.log('路径失败:', basePath, error);
+        // 扫描最近几年的数据
+        for (let year = currentYear; year >= currentYear - 2; year--) {
+            const yearData = await this.scanYearDirectoriesByFiles(year.toString());
+            if (yearData && Object.keys(yearData).length > 0) {
+                plansData[year.toString()] = yearData;
             }
         }
         
-        if (Object.keys(plansData).length === 0) {
-            console.log('所有路径都无法访问，返回空数据');
-        }
-        
+        console.log('扫描完成，找到数据:', plansData);
         return plansData;
     }
 
-    // 扫描年份目录
-    async scanYearDirectories(basePath) {
-        const data = {};
+    // 通过直接检查文件来扫描年份目录
+    async scanYearDirectoriesByFiles(year) {
+        const yearData = {};
         
-        // 扫描2024年目录
-        try {
-            const year2024Data = await this.scanYearDirectory(basePath, '2024');
-            if (year2024Data && Object.keys(year2024Data).length > 0) {
-                data['2024'] = year2024Data;
-            }
-        } catch (e) {
-            console.warn('扫描2024年目录失败:', e);
-        }
-
-        // 扫描其他年份目录
-        for (let year = 2020; year <= 2030; year++) {
-            if (year === 2024) continue; // 已经扫描过了
-            
-            try {
-                const yearData = await this.scanYearDirectory(basePath, year.toString());
-                if (yearData && Object.keys(yearData).length > 0) {
-                    data[year.toString()] = yearData;
-                }
-            } catch (e) {
-                // 忽略不存在的年份目录
+        // 检查12个月份
+        for (let month = 1; month <= 12; month++) {
+            const monthStr = String(month).padStart(2, '0');
+            const monthData = await this.scanMonthByFiles(year, monthStr);
+            if (monthData && Object.keys(monthData).length > 0) {
+                yearData[monthStr] = monthData;
             }
         }
-
-        return data;
+        
+        return yearData;
     }
 
-    // 扫描单个年份目录
+    // 通过直接检查文件来扫描月份
+    async scanMonthByFiles(year, month) {
+        const monthData = {};
+        
+        // 检查31天（最大天数）
+        for (let day = 1; day <= 31; day++) {
+            const dayStr = String(day).padStart(2, '0');
+            
+            // 尝试多种可能的路径
+            const possiblePaths = [
+                `./daily-plans/${year}/${month}/${dayStr}.md`,
+                `daily-plans/${year}/${month}/${dayStr}.md`,
+                `/daily-plans/${year}/${month}/${dayStr}.md`,
+                `${window.location.pathname.replace(/\/$/, '')}/daily-plans/${year}/${month}/${dayStr}.md`
+            ];
+            
+            let fileExists = false;
+            
+            for (const path of possiblePaths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        fileExists = true;
+                        console.log(`找到文件: ${year}/${month}/${dayStr}.md`);
+                        break;
+                    }
+                } catch (e) {
+                    // 忽略错误，继续尝试下一个路径
+                }
+            }
+            
+            if (fileExists) {
+                // 根据文件夹结构生成完整日期
+                const fullDate = this.generateFullDate(year, month, dayStr);
+                const weekday = this.getWeekday(fullDate);
+                const formattedDate = this.formatDate(fullDate);
+                
+                monthData[dayStr] = {
+                    title: `每日计划 - ${dayStr}日`,
+                    content: `点击查看 ${formattedDate} ${weekday} 的详细计划内容...`,
+                    file_path: `daily-plans/${year}/${month}/${dayStr}.md`,
+                    full_path: `./daily-plans/${year}/${month}/${dayStr}.md`,
+                    filename: `${dayStr}.md`,
+                    day: dayStr,
+                    month: month,
+                    year: year,
+                    fullDate: fullDate,
+                    weekday: weekday,
+                    formattedDate: formattedDate
+                };
+            }
+        }
+        
+        return monthData;
+    }
+
+    // 扫描年份目录
     async scanYearDirectory(basePath, year) {
         try {
             const yearPath = `${basePath}${year}/`;
             const response = await fetch(yearPath);
             if (!response.ok) {
-                return null;
+                console.log(`无法访问年份目录: ${yearPath}`);
+                return {};
             }
-
+            
             const html = await response.text();
             return await this.parseYearDirectory(html, year);
-
         } catch (error) {
-            console.warn(`扫描年份目录 ${year} 失败:`, error);
-            return null;
+            console.error(`扫描年份目录失败: ${yearPath}`, error);
+            return {};
         }
     }
 
     // 解析年份目录
     async parseYearDirectory(html, year) {
         const data = {};
-        const linkRegex = /<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/g;
-        let match;
         
-        while ((match = linkRegex.exec(html)) !== null) {
-            const href = match[1];
-            const text = match[2].trim();
-            
-            // 跳过父目录链接和当前目录
-            if (href === '../' || href === './' || href === '') {
-                continue;
-            }
-
-            // 处理月份目录 (MM/)
-            if (href.match(/^\d{2}\/$/)) {
-                const month = href.replace('/', '');
-                data[month] = {};
-                
-                // 扫描月份目录下的文件 - 等待完成
-                await this.scanMonthDirectory(basePath, year, month, data[month]);
+        // 检查12个月份
+        for (let month = 1; month <= 12; month++) {
+            const monthStr = String(month).padStart(2, '0');
+            const monthData = await this.scanMonthByFiles(year, monthStr);
+            if (monthData && Object.keys(monthData).length > 0) {
+                data[monthStr] = monthData;
             }
         }
         
